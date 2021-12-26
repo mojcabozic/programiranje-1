@@ -15,7 +15,7 @@
                 "command": "python -i \"${file}\""
             },
             "osx": {
-                "command": "python -i \"${file}\""
+                "command": "python3 -i \"${file}\""
             }
         },
         {

@@ -1,0 +1,84 @@
+obrni (x :: xs) = obrni xs @ [x]
+********************************
+Velja iz definicije obrni
+
+dolzina (xs @ ys) = dolzina xs + dolzina ys
+*******************************************
+Dokazujemo z indukcijo:
+1. xs = []
+   dolzina ([] @ ys) = dolzina ys
+   dolzina [] + dolzina ys = 0 + dolzina ys
+
+2. Predpostavimo, da velja za xs. Dokazujemo, da velja za x :: xs:
+L: dolzina(x :: xs, ys) = dolzina (x:: (xs @ ys)) = 1 + dolzina (xs @ ys) = 1 + dolzina xs + dolzina ys
+D: dolzina (x :: xs) + dolzina ys = 1 + dolzina xs + dolzina ys
+
+xs @ [] = xs
+*************
+Dokazujemo z indukcijo:
+1. xs = []
+L: [] @ [] = []
+D: [] = []
+
+2. Predpostavimo, da velja za xs. Dokazujemo, da velja za x :: xs:
+L: (x :: xs) @ [] = x :: (xs @ []) = x :: xs
+D: x :: xs = x :: xs
+
+xs @ (ys @ zs) = (xs @ ys) @ zs
+********************************
+Dokazujemo z indukcijo:
+1. xs = []
+L: [] @ [ys @ zs] = ys @ zs
+D: ([] @ yz) @ zs = ys @ zs
+
+2. Predpostavimo, da velja za xs. Dokazujemo, da velja za x :: xs:
+L: (x :: xs) @ (ys @ zs) = x :: (xs @ (ys @ zs)) = x :: ((xs @ ys) @ zs) = (x :: (xs @ ys)) @ zs = ((x :: xs) @ ys) @ zs 
+D: ((x :: xs) @ ys) @ zs
+
+obrni (xs @ ys) = obrni ys @ obrni xs
+**************************************
+Dokazujemo z indukcijo:
+1. xs = []
+L: obrni([] @ ys) = obrni ys
+D: obrni ys @ obrni [] = obrni ys @ [] = obrni ys
+
+2. Predpostavimo, da velja za xs. Dokazujemo, da velja za x :: xs:
+L: obrni((x :: xs) @ ys) = obrni (x :: (xs @ ys)) = obrni (xs @ ys) @ [x] = (obrni ys @ obrni xs) @ [x]
+D: obrni ys @ obrni(x :: xs) = obrni ys @ (obrni xs @ [x]) = (obrni ys @ obrni xs) @ [x]
+
+
+DOKAZOVANJE Z DREVESI
+
+Pokazati moramo, da sta funkciji
+
+let rec elementi = function
+    | Prazno -> []
+    | Sestavljeno (l, x, d) -> elementi l @ [x] @ elementi d 
+
+let elementi' drevo =
+    let rec aux acc = function
+        | Prazno -> acc
+        | Sestavljeni (l, x, d) -> aux (x :: (aux acc d)) L
+    in aux [] drevo
+
+ekvivalentni.
+
+Pokazati moremo, da za vsak acc in vsako drevo velja:
+
+elementi drevo @ acc = aux acc drevo
+
+Preverimo za acc = []: elementi drevo @ [] = elementi drevo = aux [] drevo = elementi' drevo
+Preverimo za drevo = Prazno: L: (elementi Prazno) @ acc = [] @ acc = acc
+                             D: aux acc Prazno = acc       
+
+Za vsak seznam acc in drevo T:
+    (elementi T) @ acc = aux acc T
+
+1. T = Prazno
+L: (elementi Prazno) @ acc = [] @ acc = acc
+D: aux acc Prazno = acc
+
+2. T = Sestavljeno (l, x, d)
+L: (elementi (l, x, d)) @ acc = (elementi l @ [x] @ elementi d) @ acc
+D: aux acc Sestavljeno (l, x, d) = aux (x :: (aux acc d)) l = (po ind. predpostavki) aux (x :: ((elementi d) @ acc)) l = 
+= elementi l @ (x :: ((elementi d) @ acc))) = elementi l @ (([x] @ elementi d) @ acc) = (elementi l @ [x] @ elementi d) @ acc

@@ -1,6 +1,7 @@
 import csv
 import os
-
+import requests
+import re
 ###############################################################################
 # Najprej definirajmo nekaj pomožnih orodij za pridobivanje podatkov s spleta.
 ###############################################################################
@@ -19,21 +20,28 @@ def download_url_to_string(url):
     """Funkcija kot argument sprejme niz in poskusi vrniti vsebino te spletne
     strani kot niz. V primeru, da med izvajanje pride do napake vrne None.
     """
+    
     try:
-        # del kode, ki morda sproži napako
-        page_content = 'TODO'
-    except 'TODO':
+        response_object = requests.get(url)
+
+    except requests.exceptions.ConnectionError:
         # koda, ki se izvede pri napaki
         # dovolj je če izpišemo opozorilo in prekinemo izvajanje funkcije
-        raise NotImplementedError()
-    # nadaljujemo s kodo če ni prišlo do napake
-    raise NotImplementedError()
+        print("Napaka pri povezovanju do:", url)
+        return ""
+
+    if response_object.status_code == requests.codes.ok:
+        return response_object.text
+    else:
+        raise requests.HTTPError(f"Ni ok: {response_object.status_code}")
+
+    
 
 
 def save_string_to_file(text, directory, filename):
     """Funkcija zapiše vrednost parametra "text" v novo ustvarjeno datoteko
     locirano v "directory"/"filename", ali povozi obstoječo. V primeru, da je
-    niz "directory" prazen datoteko ustvari v trenutni mapi.
+    niz "directory" prazen, datoteko ustvari v trenutni mapi.
     """
     os.makedirs(directory, exist_ok=True)
     path = os.path.join(directory, filename)
@@ -45,10 +53,15 @@ def save_string_to_file(text, directory, filename):
 # Definirajte funkcijo, ki prenese glavno stran in jo shrani v datoteko.
 
 
-def save_frontpage(page, directory, filename):
+def save_frontpage(directory, filename):
     """Funkcija shrani vsebino spletne strani na naslovu "page" v datoteko
     "directory"/"filename"."""
-    raise NotImplementedError()
+
+    text = download_url_to_string(cats_frontpage_url)
+    save_string_to_file (text, directory, filename)
+
+    return None
+    
 
 
 ###############################################################################
@@ -58,7 +71,10 @@ def save_frontpage(page, directory, filename):
 
 def read_file_to_string(directory, filename):
     """Funkcija vrne celotno vsebino datoteke "directory"/"filename" kot niz."""
-    raise NotImplementedError()
+    with open(f"{directory}/{filename}") as dat:
+        niz = dat.read()
+
+    return niz
 
 
 # Definirajte funkcijo, ki sprejme niz, ki predstavlja vsebino spletne strani,
@@ -70,7 +86,14 @@ def read_file_to_string(directory, filename):
 def page_to_ads(page_content):
     """Funkcija poišče posamezne oglase, ki se nahajajo v spletni strani in
     vrne seznam oglasov."""
-    raise NotImplementedError()
+    
+    template = re.compile(r'<li class="EntityList-item  EntityList-item--'
+                          r'(.*?)</article>',
+                          re.DOTALL)
+                        
+    seznam_oglasov = template.findall(page_content)
+
+    return seznam_oglasov
 
 
 # Definirajte funkcijo, ki sprejme niz, ki predstavlja oglas, in izlušči
@@ -80,8 +103,13 @@ def page_to_ads(page_content):
 def get_dict_from_ad_block(block):
     """Funkcija iz niza za posamezen oglasni blok izlušči podatke o imenu, ceni
     in opisu ter vrne slovar, ki vsebuje ustrezne podatke."""
-    raise NotImplementedError()
 
+    rx = re.compile(r'<h3.*> (?P<name>.*?) <a name=.*? </a></h3>')
+    data = rx.search(block)
+
+
+    ad_dict = data.groupdict()
+    
 
 # Definirajte funkcijo, ki sprejme ime in lokacijo datoteke, ki vsebuje
 # besedilo spletne strani, in vrne seznam slovarjev, ki vsebujejo podatke o
@@ -127,8 +155,8 @@ def write_cat_ads_to_csv(ads, directory, filename):
     # Če drži se program normalno izvaja, drugače pa sproži napako
     # Prednost je v tem, da ga lahko pod določenimi pogoji izklopimo v
     # produkcijskem okolju
-    assert ads and (all(j.keys() == ads[0].keys() for j in ads))
-    raise NotImplementedError()
+    #assert ads and (all(j.keys() == ads[0].keys() for j in ads))
+    #raise NotImplementedError()
 
 
 # Celoten program poženemo v glavni funkciji
@@ -151,7 +179,7 @@ def main(redownload=True, reparse=True):
     # celotna spletna stran ob vsakem zagon prenese (četudi že obstaja)
     # in enako za pretvorbo
 
-    raise NotImplementedError()
+    #raise NotImplementedError()
 
 
 if __name__ == '__main__':

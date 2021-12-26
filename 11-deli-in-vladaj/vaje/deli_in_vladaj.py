@@ -26,6 +26,17 @@
 #     >>> a
 #     [10, 0, 2, 4, 11, 5, 17, 15, 18]
 ###############################################################################
+def pivot(a, start, end):
+    p = a[start]
+    indeks_desnega = start + 1
+    for i in range(start, end + 1):
+        if a[i] < p:
+            a[i], a[indeks_desnega] = a[indeks_desnega], a[i]
+            a[indeks_desnega - 1], a[indeks_desnega] = a[indeks_desnega], a[indeks_desnega - 1]
+            indeks_desnega += 1
+
+    return indeks_desnega - 1
+
 
 
 ###############################################################################
@@ -35,13 +46,27 @@
 #
 #     >>> a = [10, 4, 5, 15, 11, 3, 17, 2, 18]
 #
-# potem je tretji element po velikosti enak 5, ker so od njega manši elementi
+# potem je tretji element po velikosti enak 5, ker so od njega manjši elementi
 #  2, 3 in 4. Pri tem štejemo indekse od 0 naprej, torej je "ničti" element 2.
 #
 # Sestavite funkcijo [kth_element(a, k)], ki v tabeli [a] poišče [k]-ti element
 # po velikosti. Funkcija sme spremeniti tabelo [a]. Cilj naloge je, da jo
-# rešite brez da v celoti uredite tabelo [a].
+# rešite, brez da v celoti uredite tabelo [a].
 ###############################################################################
+def kth_element(a, k, start, end):
+    if start > end:
+        return None
+    else:
+        indeks_pivota = pivot(a, start, end)
+        if indeks_pivota == k:
+            return a[indeks_pivota]
+
+        if indeks_pivota < k:
+            return kth_element(a, k, indeks_pivota + 1, len(a) - 1)
+
+
+        if indeks_pivota > k:
+            return kth_element(a, k, 0, indeks_pivota - 1)
 
 
 ###############################################################################
