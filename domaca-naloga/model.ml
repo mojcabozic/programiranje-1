@@ -43,18 +43,30 @@ let print_grid string_of_cell grid =
 
 (* Funkcije za dostopanje do elementov mreže *)
 
-let get_row (grid : 'a grid) (row_ind : int) = failwith "TODO"
+let rec get_row (grid : 'a grid) (row_ind : int) = 
+    grid.(row_ind)
 
-let rows grid = failwith "TODO"
+let rows (grid : 'a grid) = List.map Array.to_list (Array.to_list grid)
 
 let get_column (grid : 'a grid) (col_ind : int) =
   Array.init 9 (fun row_ind -> grid.(row_ind).(col_ind))
 
 let columns grid = List.init 9 (get_column grid)
 
-let get_box (grid : 'a grid) (box_ind : int) = failwith "TODO"
 
-let boxes grid = failwith "TODO"
+let chunkify_grid (grid : 'a grid) =
+    Array.map (fun a -> chunkify 3 (Array.to_list a)) grid
+
+
+let get_box (grid : 'a grid) (box_ind : int) = 
+    let grid_chunks = chunkify_grid grid in 
+        match box_ind with
+        | 0 | 1 | 2 -> [List.nth grid_chunks.(0) box_ind; List.nth grid_chunks.(1) box_ind; List.nth grid_chunks.(2) box_ind]
+        | 3 | 4 | 5 -> [List.nth grid_chunks.(3) (box_ind - 3); List.nth grid_chunks.(4) (box_ind - 3); List.nth grid_chunks.(5) (box_ind - 3)]
+        | 6 | 7 | 8 -> [List.nth grid_chunks.(6) (box_ind - 6); List.nth grid_chunks.(7) (box_ind - 6); List.nth grid_chunks.(8) (box_ind - 6)]
+
+let boxes (grid : 'a grid) = failwith "TODO"
+    
 
 (* Funkcije za ustvarjanje novih mrež *)
 
