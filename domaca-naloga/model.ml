@@ -61,11 +61,13 @@ let chunkify_grid (grid : 'a grid) =
 let get_box (grid : 'a grid) (box_ind : int) = 
     let grid_chunks = chunkify_grid grid in 
         match box_ind with
-        | 0 | 1 | 2 -> [List.nth grid_chunks.(0) box_ind; List.nth grid_chunks.(1) box_ind; List.nth grid_chunks.(2) box_ind]
-        | 3 | 4 | 5 -> [List.nth grid_chunks.(3) (box_ind - 3); List.nth grid_chunks.(4) (box_ind - 3); List.nth grid_chunks.(5) (box_ind - 3)]
-        | 6 | 7 | 8 -> [List.nth grid_chunks.(6) (box_ind - 6); List.nth grid_chunks.(7) (box_ind - 6); List.nth grid_chunks.(8) (box_ind - 6)]
+        | 0 | 1 | 2 -> List. flatten [List.nth grid_chunks.(0) box_ind; List.nth grid_chunks.(1) box_ind; List.nth grid_chunks.(2) box_ind]
+        | 3 | 4 | 5 -> List. flatten [List.nth grid_chunks.(3) (box_ind - 3); List.nth grid_chunks.(4) (box_ind - 3); List.nth grid_chunks.(5) (box_ind - 3)]
+        | 6 | 7 | 8 -> List. flatten [List.nth grid_chunks.(6) (box_ind - 6); List.nth grid_chunks.(7) (box_ind - 6); List.nth grid_chunks.(8) (box_ind - 6)]
 
-let boxes (grid : 'a grid) = failwith "TODO"
+let boxes (grid : 'a grid) =
+    let rec aux acc grid index = if index != 9 then aux ((get_box grid index):: acc) grid (index + 1) else List.rev acc
+in aux [] grid 0
     
 
 (* Funkcije za ustvarjanje novih mrež *)

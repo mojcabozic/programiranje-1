@@ -1,68 +1,69 @@
-type available = { loc : int * int; possible : int list }
+type sudoku_grid = int option Array.t Array.t
 
-(* TODO: tip stanja ustrezno popravite, saj boste med reševanjem zaradi učinkovitosti
-   želeli imeti še kakšno dodatno informacijo *)
-type state = { problem : Model.problem; current_grid : int option Model.grid }
-
-let print_state (state : state) : unit =
-  Model.print_grid
-    (function None -> "?" | Some digit -> string_of_int digit)
-    state.current_grid
-
-type response = Solved of Model.solution | Unsolved of state | Fail of state
-
-let initialize_state (problem : Model.problem) : state =
-  { current_grid = Model.copy_grid problem.initial_grid; problem }
-
-let validate_state (state : state) : response =
-  let unsolved =
-    Array.exists (Array.exists Option.is_none) state.current_grid
+let chunkify size lst =
+  let rec aux chunk chunks n lst =
+    match (n, lst) with
+    | _, [] when chunk = [] -> List.rev chunks
+    | _, [] -> List.rev (List.rev chunk :: chunks)
+    | 0, _ :: _ -> aux [] (List.rev chunk :: chunks) size lst
+    | _, x :: xs -> aux (x :: chunk) chunks (n - 1) xs
   in
-  if unsolved then Unsolved state
-  else
-    (* Option.get ne bo sprožil izjeme, ker so vse vrednosti v mreži oblike Some x *)
-    let solution = Model.map_grid Option.get state.current_grid in
-    if Model.is_valid_solution state.problem solution then Solved solution
-    else Fail state
+  aux [] [] size lst
 
-let branch_state (state : state) : (state * state) option =
-  (* TODO: Pripravite funkcijo, ki v trenutnem stanju poišče hipotezo, glede katere
-     se je treba odločiti. Če ta obstaja, stanje razveji na dve stanji:
-     v prvem predpostavi, da hipoteza velja, v drugem pa ravno obratno.
-     Če bo vaš algoritem najprej poizkusil prvo možnost, vam morda pri drugi
-     za začetek ni treba zapravljati preveč časa, saj ne bo nujno prišla v poštev. *)
-  failwith "TODO"
+let chunkify_grid (grid : sudoku_grid) =
+    Array.map (fun a -> chunkify 3 (Array.to_list a)) grid
 
-(* pogledamo, če trenutno stanje vodi do rešitve *)
-let rec solve_state (state : state) =
-  (* uveljavimo trenutne omejitve in pogledamo, kam smo prišli *)
-  (* TODO: na tej točki je stanje smiselno počistiti in zožiti možne rešitve *)
-  match validate_state state with
-  | Solved solution ->
-      (* če smo našli rešitev, končamo *)
-      Some solution
-  | Fail fail ->
-      (* prav tako končamo, če smo odkrili, da rešitev ni *)
-      None
-  | Unsolved state' ->
-      (* če še nismo končali, raziščemo stanje, v katerem smo končali *)
-      explore_state state'
+let rec get_row (grid : sudoku_grid) (row_ind : int) = 
+    grid.(row_ind)
 
-and explore_state (state : state) =
-  (* pri raziskovanju najprej pogledamo, ali lahko trenutno stanje razvejimo *)
-  match branch_state state with
-  | None ->
-      (* če stanja ne moremo razvejiti, ga ne moremo raziskati *)
-      None
-  | Some (st1, st2) -> (
-      (* če stanje lahko razvejimo na dve možnosti, poizkusimo prvo *)
-      match solve_state st1 with
-      | Some solution ->
-          (* če prva možnost vodi do rešitve, do nje vodi tudi prvotno stanje *)
-          Some solution
-      | None ->
-          (* če prva možnost ne vodi do rešitve, raziščemo še drugo možnost *)
-          solve_state st2 )
+let get_column (grid : sudoku_grid) (col_ind : int) =
+  Array.init 9 (fun row_ind -> grid.(row_ind).(col_ind)) 
 
-let solve_problem (problem : Model.problem) =
-  problem |> initialize_state |> solve_state
+let get_box (grid : sudoku_grid) (box_ind : int) = 
+    let grid_chunks = chunkify_grid grid in 
+        match box_ind with
+        | 0 | 1 | 2 -> List.flatten [List.nth grid_chunks.(0) box_ind; List.nth grid_chunks.(1) box_ind; List.nth grid_chunks.(2) box_ind]
+        | 3 | 4 | 5 -> List.flatten [List.nth grid_chunks.(3) (box_ind - 3); List.nth grid_chunks.(4) (box_ind - 3); List.nth grid_chunks.(5) (box_ind - 3)]
+        | 6 | 7 | 8 -> List.flatten [List.nth grid_chunks.(6) (box_ind - 6); List.nth grid_chunks.(7) (box_ind - 6); List.nth grid_chunks.(8) (box_ind - 6)]
+    
+(* skopirano *)
+
+
+let box_index (vrstica, stolpec) = stolpec/3 + (vrstica/3)*3
+
+let rec int_in_list i = function
+    | [] -> false
+    | x :: xs -> if Some x = Some i then true else int_in_list i xs 
+    
+
+let is_valid i (vrstica, stolpec) (grid: sudoku_grid) =
+    not (int_in_list i (get_box grid (box_index (vrstica, stolpec))) || int_in_list i (Array.to_list (get_column grid stolpec)) || int_in_list i (Array.to_list (get_row grid vrstica)))
+    
+let rec next_empty grid (vrstica, stolpec) =
+    if vrstica = 8 && stolpec = 8 then (-1, -1)
+    else
+        if stolpec != 8 then 
+            if grid.(vrstica).(stolpec + 1) = None then (vrstica, stolpec + 1)
+            else next_empty grid (vrstica, stolpec + 1)
+        else
+            if grid.(vrstica + 1).(0) = None then (vrstica + 1, 0)
+            else next_empty grid (vrstica + 1, 0)
+      
+
+let solve_grid grid =
+    let rec solve_grid_aux i (vrstica, stolpec) grid =
+        if i = 10 then [|[|None|]|]
+        else
+            if (vrstica, stolpec) = (-1, -1) then grid
+            else
+                if grid.(vrstica).(stolpec) = None then
+                    if is_valid (Some i) (vrstica, stolpec) grid then
+                        (grid.(vrstica).(stolpec) <- (Some i);
+                        if solve_grid_aux 1 (next_empty grid (vrstica, stolpec)) grid = [|[|None|]|] then
+                            (grid.(vrstica).(stolpec) <- None;
+                            solve_grid_aux (i + 1) (vrstica, stolpec) grid)
+                        else grid)
+                    else solve_grid_aux (i + 1) (vrstica, stolpec) grid
+                else 
+                    solve_grid_aux i (next_empty grid (vrstica, stolpec)) grid
+    in solve_grid_aux 1 (0, 0) grid
