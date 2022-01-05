@@ -21,6 +21,28 @@ let test_matrix =
      [| 2 ; 4 ; 5 |];
      [| 7 ; 0 ; 1 |] |]
 
+let nested_list matrix = Array.to_list (Array.map Array.to_list (matrix))
+
+let odrezi_vertikalno matrix =
+    let rec aux acc = function
+    | x :: xs -> aux ((List.tl x) :: acc) (List.tl matrix)
+    | [] -> List.rev acc
+in aux [] 
+    
+let odrezi_horizontalno matrix =
+    List.tl matrix
+
+let max_cheese cheese_matrix =
+    let matrix_list = nested_list cheese_matrix in
+    let dimx = List.length matrix_list in
+    let dimy = List.length (List.nth matrix_list 0) in
+        let rec aux counter matrix_list = 
+            if (List.nth (List.nth matrix_list 0) 1) > (List.nth (List.nth matrix_list 1) 0) then
+                aux (counter + List.nth (List.nth matrix_list 0) 0) (odrezi_vertikalno matrix_list)
+            else aux (counter + List.nth (List.nth matrix_list 0) 0) (odrezi_horizontalno matrix_list)
+in aux 0 cheese_matrix
+
+
 (*----------------------------------------------------------------------------*]
  Poleg količine sira, ki jo miška lahko poje, jo zanima tudi točna pot, ki naj
  jo ubere, da bo prišla do ustrezne pojedine.
@@ -38,6 +60,25 @@ let test_matrix =
 
 type mouse_direction = Down | Right
 
+let optimal_path cheese_matrix =
+    let dimx = Array.length cheese_matrix in
+    let dimy = Array.length cheese_matrix.(0) in
+    let rec best_path y x =
+        let best_right, path_right = 
+            if (x + 1) = dimx then (0, []) else best_path y (x + 1)
+        in
+        let best_down, path_down =
+            if y + 1 = dimy then (0, []) else best_path (y + 1) x
+        in
+        let current_value = cheese_matrix.(y).(x)
+        let best, step =
+            if best_right >= best_down then
+                (current_value + best_right, Right :: path_right)
+            else
+                (current_value + best_down, Down :: path_down)
+in
+best_path 0 0 |> snd 
+     
 
 (*----------------------------------------------------------------------------*]
  Rešujemo problem sestavljanja alternirajoče obarvanih stolpov. Imamo štiri

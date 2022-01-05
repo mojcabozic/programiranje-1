@@ -10,7 +10,7 @@
             },
             "windows": {
                 "command": "python -i \\\"${file}\\\""
-                },
+            },
             "linux": {
                 "command": "python -i \"${file}\""
             },
@@ -27,13 +27,22 @@
             },
             "windows": {
                 "command": "ocaml -init \\\"${file}\\\""
-                },
+            },
             "linux": {
                 "command": "ocaml -init \"${file}\""
             },
             "osx": {
                 "command": "ocaml -init \"${file}\""
             }
+        },
+        {
+            "type": "typescript",
+            "tsconfig": "ocaml-lsp/ocaml-lsp-server/test/e2e/tsconfig.json",
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "group": "build",
+            "label": "tsc: build - ocaml-lsp/ocaml-lsp-server/test/e2e/tsconfig.json"
         }
     ]
 }

@@ -1,6 +1,11 @@
 (* Pomožni tip, ki predstavlja mrežo *)
-
 type 'a grid = 'a Array.t Array.t
+
+(* Model za vhodne probleme *)
+type problem = int option grid
+
+(* Model za izhodne rešitve *)
+type solution = int grid
 
 (* Funkcije za prikaz mreže.
    Te definiramo najprej, da si lahko z njimi pomagamo pri iskanju napak. *)
@@ -15,6 +20,10 @@ let chunkify size lst =
     | _, x :: xs -> aux (x :: chunk) chunks (n - 1) xs
   in
   aux [] [] size lst
+
+let int_opt_to_str arg = 
+    if Option.is_none arg then " " else Int.to_string (Option.get arg)
+    
 
 let string_of_list string_of_element sep lst =
   lst |> List.map string_of_element |> String.concat sep
@@ -42,28 +51,26 @@ let print_grid string_of_cell grid =
   Printf.printf "┗%s┷%s┷%s┛\n" big big big
 
 (* Funkcije za dostopanje do elementov mreže *)
-
-let rec get_row (grid : 'a grid) (row_ind : int) = 
+let get_row (grid : problem) (row_ind : int) = 
     grid.(row_ind)
 
 let rows (grid : 'a grid) = List.map Array.to_list (Array.to_list grid)
 
-let get_column (grid : 'a grid) (col_ind : int) =
-  Array.init 9 (fun row_ind -> grid.(row_ind).(col_ind))
+let get_column (grid : problem) (col_ind : int) =
+  Array.init 9 (fun row_ind -> grid.(row_ind).(col_ind)) 
 
 let columns grid = List.init 9 (get_column grid)
 
-
-let chunkify_grid (grid : 'a grid) =
+let chunkify_grid grid =
     Array.map (fun a -> chunkify 3 (Array.to_list a)) grid
 
-
-let get_box (grid : 'a grid) (box_ind : int) = 
+let get_box (grid : problem) (box_ind : int) = 
     let grid_chunks = chunkify_grid grid in 
         match box_ind with
-        | 0 | 1 | 2 -> List. flatten [List.nth grid_chunks.(0) box_ind; List.nth grid_chunks.(1) box_ind; List.nth grid_chunks.(2) box_ind]
-        | 3 | 4 | 5 -> List. flatten [List.nth grid_chunks.(3) (box_ind - 3); List.nth grid_chunks.(4) (box_ind - 3); List.nth grid_chunks.(5) (box_ind - 3)]
-        | 6 | 7 | 8 -> List. flatten [List.nth grid_chunks.(6) (box_ind - 6); List.nth grid_chunks.(7) (box_ind - 6); List.nth grid_chunks.(8) (box_ind - 6)]
+        | 0 | 1 | 2 -> List.flatten [List.nth grid_chunks.(0) box_ind; List.nth grid_chunks.(1) box_ind; List.nth grid_chunks.(2) box_ind]
+        | 3 | 4 | 5 -> List.flatten [List.nth grid_chunks.(3) (box_ind - 3); List.nth grid_chunks.(4) (box_ind - 3); List.nth grid_chunks.(5) (box_ind - 3)]
+        | 6 | 7 | 8 -> List.flatten [List.nth grid_chunks.(6) (box_ind - 6); List.nth grid_chunks.(7) (box_ind - 6); List.nth grid_chunks.(8) (box_ind - 6)]
+        | _ -> failwith "impossible"
 
 let boxes (grid : 'a grid) =
     let rec aux acc grid index = if index != 9 then aux ((get_box grid index):: acc) grid (index + 1) else List.rev acc
@@ -72,7 +79,19 @@ in aux [] grid 0
 
 (* Funkcije za ustvarjanje novih mrež *)
 
-let map_grid (f : 'a -> 'b) (grid : 'a grid) : 'b grid = failwith "TODO"
+let map_grid (f : 'a -> 'b) (grid : 'a grid) : 'b grid = 
+    let rec aux acc f grid (x, y) =
+        if (x, y) = (8, 8) then 
+            (acc.(x).(y) <- f grid.(x).(y);
+            acc)
+        else
+            if y != 8 then 
+                (acc.(x).(y) <- f grid.(x).(y);
+                aux acc f grid (x, y + 1))
+            else
+                (acc.(x).(y) <- f grid.(x).(y);
+                aux acc f grid (x + 1, 0))
+in aux (Array.make_matrix 9 9 0) f grid (0, 0)
 
 let copy_grid (grid : 'a grid) : 'a grid = map_grid (fun x -> x) grid
 
@@ -107,11 +126,7 @@ let grid_of_string cell_of_char str =
     failwith "Nepravilno število stolpcev";
   grid
 
-(* Model za vhodne probleme *)
-
-type problem = { initial_grid : int option grid }
-
-let print_problem problem : unit = failwith "TODO"
+let print_problem problem : unit = print_grid int_opt_to_str problem
 
 let problem_of_string str =
   let cell_of_char = function
@@ -119,12 +134,27 @@ let problem_of_string str =
     | c when '1' <= c && c <= '9' -> Some (Some (Char.code c - Char.code '0'))
     | _ -> None
   in
-  { initial_grid = grid_of_string cell_of_char str }
+  grid_of_string cell_of_char str         
 
-(* Model za izhodne rešitve *)
+(*
+let find_solution (input_problem) =
+    Solver.solve_problem (problem_of_string input_problem)
+*)
 
-type solution = int grid
+let print_solution (solution: solution) = print_grid Int.to_string solution
 
-let print_solution solution = failwith "TODO"
+let is_valid_solution problem solution = failwith "TODO"        
 
-let is_valid_solution problem solution = failwith "TODO"
+let test = "┏━━━┯━━━┯━━━┓
+┃483│921│657┃
+┃967│3 5│821┃
+┃251│876│493┃
+┠───┼───┼───┨
+┃548│132│976┃
+┃729│ 64│ 38┃
+┃136│798│ 45┃
+┠───┼───┼───┨
+┃372│689│514┃
+┃814│253│769┃
+┃695│417│382┃
+┗━━━┷━━━┷━━━┛"
