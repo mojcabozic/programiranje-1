@@ -24,7 +24,6 @@ let chunkify size lst =
 let int_opt_to_str arg = 
     if Option.is_none arg then " " else Int.to_string (Option.get arg)
     
-
 let string_of_list string_of_element sep lst =
   lst |> List.map string_of_element |> String.concat sep
 
@@ -50,19 +49,15 @@ let print_grid string_of_cell grid =
   Printf.printf "%s" row_blocks;
   Printf.printf "┗%s┷%s┷%s┛\n" big big big
 
+let chunkify_grid grid =
+    Array.map (fun a -> chunkify 3 (Array.to_list a)) grid
+
 (* Funkcije za dostopanje do elementov mreže *)
 let get_row (grid : problem) (row_ind : int) = 
     grid.(row_ind)
 
-let rows (grid : 'a grid) = List.map Array.to_list (Array.to_list grid)
-
 let get_column (grid : problem) (col_ind : int) =
   Array.init 9 (fun row_ind -> grid.(row_ind).(col_ind)) 
-
-let columns grid = List.init 9 (get_column grid)
-
-let chunkify_grid grid =
-    Array.map (fun a -> chunkify 3 (Array.to_list a)) grid
 
 let get_box (grid : problem) (box_ind : int) = 
     let grid_chunks = chunkify_grid grid in 
@@ -71,14 +66,8 @@ let get_box (grid : problem) (box_ind : int) =
         | 3 | 4 | 5 -> List.flatten [List.nth grid_chunks.(3) (box_ind - 3); List.nth grid_chunks.(4) (box_ind - 3); List.nth grid_chunks.(5) (box_ind - 3)]
         | 6 | 7 | 8 -> List.flatten [List.nth grid_chunks.(6) (box_ind - 6); List.nth grid_chunks.(7) (box_ind - 6); List.nth grid_chunks.(8) (box_ind - 6)]
         | _ -> failwith "impossible"
-
-let boxes (grid : 'a grid) =
-    let rec aux acc grid index = if index != 9 then aux ((get_box grid index):: acc) grid (index + 1) else List.rev acc
-in aux [] grid 0
     
-
 (* Funkcije za ustvarjanje novih mrež *)
-
 let map_grid (f : 'a -> 'b) (grid : 'a grid) : 'b grid = 
     let rec aux acc f grid (x, y) =
         if (x, y) = (8, 8) then 
@@ -92,24 +81,6 @@ let map_grid (f : 'a -> 'b) (grid : 'a grid) : 'b grid =
                 (acc.(x).(y) <- f grid.(x).(y);
                 aux acc f grid (x + 1, 0))
 in aux (Array.make_matrix 9 9 0) f grid (0, 0)
-
-let copy_grid (grid : 'a grid) : 'a grid = map_grid (fun x -> x) grid
-
-let foldi_grid (f : int -> int -> 'a -> 'acc -> 'acc) (grid : 'a grid)
-    (acc : 'acc) : 'acc =
-  let acc, _ =
-    Array.fold_left
-      (fun (acc, row_ind) row ->
-        let acc, _ =
-          Array.fold_left
-            (fun (acc, col_ind) cell ->
-              (f row_ind col_ind cell acc, col_ind + 1))
-            (acc, 0) row
-        in
-        (acc, row_ind + 1))
-      (acc, 0) grid
-  in
-  acc
 
 let row_of_string cell_of_char str =
   List.init (String.length str) (String.get str) |> List.filter_map cell_of_char
@@ -136,25 +107,4 @@ let problem_of_string str =
   in
   grid_of_string cell_of_char str         
 
-(*
-let find_solution (input_problem) =
-    Solver.solve_problem (problem_of_string input_problem)
-*)
-
 let print_solution (solution: solution) = print_grid Int.to_string solution
-
-let is_valid_solution problem solution = failwith "TODO"        
-
-let test = "┏━━━┯━━━┯━━━┓
-┃483│921│657┃
-┃967│3 5│821┃
-┃251│876│493┃
-┠───┼───┼───┨
-┃548│132│976┃
-┃729│ 64│ 38┃
-┃136│798│ 45┃
-┠───┼───┼───┨
-┃372│689│514┃
-┃814│253│769┃
-┃695│417│382┃
-┗━━━┷━━━┷━━━┛"
